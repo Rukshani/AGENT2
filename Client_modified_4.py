@@ -9,9 +9,10 @@ import sys
 from time import sleep
 from time import gmtime, strftime
 import datetime
+import interrupt
 
 CRITICAL_BATTERY_LEVEL = 3.6
-BROADCAST_NETWORK = '192.168.8.255'
+BROADCAST_NETWORK = '192.168.43.255'
 WEBSOCKET_SERVER_ENDPOINT = "ws://localhost:8080/Coordinator/coordinator"
 
 AGENT_IP = ""
@@ -21,7 +22,7 @@ AREA_MAP = []
 INTITAL_PLACE = []
 PERSON_DETAILS = []
 
-currentEvent = ""
+
 incomeMsg = ""
 assignedArea = []
 
@@ -30,17 +31,6 @@ class Priority:
     LOW = 0
     NORMAL = 1
     HIGH = 2
-
-
-##-------------------- List of Intrrupts ---------------------------##
-
-class Interrupt:
-    NO_EVENT = 0
-    INCOMING_MESSAGE = 1
-    CRITICAL_BATTERY_LEVEL_REACHED = 2
-    REGISTER_TO_SERVICE = 3
-    VIDEO_PROCESSOR_NOTIFICATION = 4
-
 
 ##-------------------- List of Intrrupts ---------------------------##
 class Message:
@@ -144,8 +134,7 @@ class DummyClient(WebSocketClient):
     def received_message(self, m):
         global incomeMsg
         incomeMsg = str(m)
-        global currentEvent
-        currentEvent = Interrupt.INCOMING_MESSAGE
+        interrupt.currentEvent = interrupt.Interrupt.INCOMING_MESSAGE
         thread.interrupt_main()
 
 
@@ -170,14 +159,14 @@ def drawObstacles(rectangle):
 
 ##-------------------- Agent Main Process ------------------------------------------##   
 def agentMainProcess(currentEvent, group):
-    if (currentEvent != Interrupt.NO_EVENT):
+    if (currentEvent != interrupt.Interrupt.NO_EVENT):
         a = datetime.datetime.now()
-        if (currentEvent == Interrupt.REGISTER_TO_SERVICE):
+        if (currentEvent == interrupt.Interrupt.REGISTER_TO_SERVICE):
             ws = group.get(COORDINATOR, None);
             msg = formatTheMessageAndSend(Message.READY_TO_WORK, Message.READY_TO_WORK, AGENT_IP, COORDINATOR,
                                           Priority.NORMAL);
             ws.send(msg)
-        elif (currentEvent == Interrupt.INCOMING_MESSAGE):
+        elif (currentEvent == interrupt.Interrupt.INCOMING_MESSAGE):
 
             j = json.loads(incomeMsg)
             tag = j['Header'][0]['Tag'][0]
@@ -282,8 +271,8 @@ def formatTheMessageAndSend(msg, tag, sender, receiver, priority):
 
 def main():
     try:
-        global currentEvent
-        currentEvent = Interrupt.NO_EVENT
+        
+        interrupt.currentEvent = interrupt.Interrupt.NO_EVENT
         CommunicatorGroup = {}
 
         ######### Start Battery Monitoring Thread #####
@@ -303,13 +292,13 @@ def main():
         ws.connect()
 
         CommunicatorGroup[COORDINATOR] = ws
-        currentEvent = Interrupt.REGISTER_TO_SERVICE
+        interrupt.currentEvent = interrupt.Interrupt.REGISTER_TO_SERVICE
 
         ######### Start the main process of Agent #######
         while True:
             try:
-                agentMainProcess(currentEvent, CommunicatorGroup);
-                currentEvent = Interrupt.NO_EVENT
+                agentMainProcess(interrupt.currentEvent, CommunicatorGroup);
+                interrupt.currentEvent = interrupt.Interrupt.NO_EVENT
                 ws.run_forever()
             except KeyboardInterrupt:
                 print('interrupted')
