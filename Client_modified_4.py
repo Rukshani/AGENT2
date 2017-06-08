@@ -12,7 +12,7 @@ import datetime
 import interrupt
 
 CRITICAL_BATTERY_LEVEL = 3.6
-BROADCAST_NETWORK = '192.168.8.255'
+BROADCAST_NETWORK = '192.168.43.255'
 WEBSOCKET_SERVER_ENDPOINT = "ws://localhost:8080/Coordinator/coordinator"
 
 AGENT_IP = ""
