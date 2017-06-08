@@ -62,13 +62,9 @@ def set_initial(goal_init, turtle):
     turtle.pendown()
 
 
-def search(init, goal, grid, f_degree, b_degree, r_degree, l_degree):
-    global gridGlobal, f_degreeGlobal, b_degreeGlobal, r_degreeGlobal, l_degreeGlobal
+def search(init, goal, grid):
+    global gridGlobal
     gridGlobal = grid
-    f_degreeGlobal = f_degree
-    b_degreeGlobal = b_degree
-    r_degreeGlobal = r_degree
-    l_degreeGlobal = l_degree
 
     heuristic = heuristic_cal(grid)
     # turtle.speed(10)
@@ -186,6 +182,6 @@ def search(init, goal, grid, f_degree, b_degree, r_degree, l_degree):
     return path_LocationList
 
 
+# --------------------- sending current Location ---------------------
 def searchDetails(currentLocation, initialLocationPoint):
-    search(currentLocation, initialLocationPoint, gridGlobal, f_degreeGlobal, b_degreeGlobal, r_degreeGlobal,
-           l_degreeGlobal)
+    search(currentLocation, initialLocationPoint, gridGlobal)

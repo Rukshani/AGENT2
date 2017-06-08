@@ -47,7 +47,7 @@ def withoutSA(area, assignedArea, distanceWithoutSA):
 
 # -------------------- plotting with SA ------------------------------------------##
 runCount = 0
-def withSA(area, assignedArea, distanceWithoutSA, AREA_MAP, f_degree, b_degree, r_degree, l_degree, INTITAL_PLACE):
+def withSA(area, assignedArea, distanceWithoutSA, AREA_MAP, INTITAL_PLACE):
     keypoint = [assignedArea[area[i]] for i in range(len(area))]
     keypoint += [assignedArea[area[0]]]
     keypoint = array(keypoint)
@@ -113,15 +113,15 @@ def withSA(area, assignedArea, distanceWithoutSA, AREA_MAP, f_degree, b_degree, 
     for i in range(len(keyPointsList)):
         init = goal_init[i]
         goal = goal_init[i + 1]
-        path_LocationList = search(init, goal, AREA_MAP, f_degree, b_degree, r_degree, l_degree)
+        path_LocationList = search(init, goal, AREA_MAP)
         from CompassControl import key_input
-        key_input(path_LocationList[0], f_degree, b_degree, r_degree, l_degree, INTITAL_PLACE, path_LocationList[1], AREA_MAP, assignedArea)
+        key_input(path_LocationList[0],INTITAL_PLACE, path_LocationList[1], AREA_MAP, assignedArea)
 
         goal_init.append(init)
         goal_init.append(goal)
 
 
-def mainKeyPointCoverage(AREA_MAP, f_degree, b_degree, r_degree, l_degree, assignedArea, INTITAL_PLACE):
+def mainKeyPointCoverage(AREA_MAP,assignedArea, INTITAL_PLACE):
     print "AREA_MAP"
     for kr in range(len(AREA_MAP)):
         print AREA_MAP[kr]
@@ -182,7 +182,7 @@ def mainKeyPointCoverage(AREA_MAP, f_degree, b_degree, r_degree, l_degree, assig
             if accepted == 0: break  # If the path does not want to change any more, we can stop
 
     # -------------------- plotting with SA ------------------------------------------##
-    withSA(area, assignedArea, distanceWithoutSA, AREA_MAP, f_degree, b_degree, r_degree, l_degree, INTITAL_PLACE)
+    withSA(area, assignedArea, distanceWithoutSA, AREA_MAP, INTITAL_PLACE)
 
 
 if __name__ == '__main__':

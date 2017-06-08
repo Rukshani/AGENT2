@@ -7,6 +7,7 @@ import os
 import math
 import thread
 import interrupt
+from Client_modified_4 import CompassBearing
 
 # IO.setwarnings(False)
 # IO.setmode (IO.BOARD)
@@ -242,10 +243,7 @@ def stopNotify():
         interrupt.currentEvent = interrupt.Interrupt.GOTO_START
         thread.interrupt_main()
 
-
-# ~ def key_input(path,f_degree,b_degree,r_degree,l_degree, pathcounter):
-def key_input(path, f_degree, b_degree, r_degree, l_degree, initialLocation, currentLocationList, AREA_MAP,
-              assignedArea):
+def key_input(path,initialLocation, currentLocationList, AREA_MAP, assignedArea):
     global updatedAssignedArea
     updatedAssignedArea = assignedArea
     global currentLocation
@@ -284,23 +282,6 @@ def key_input(path, f_degree, b_degree, r_degree, l_degree, initialLocation, cur
                 updatedAssignedArea.remove(keypoint)
         print "coveredKeypointsList: ", coveredKeypointsList
 
-        # print "New assignedArea: ",assignedArea
-        # print "Current TickCount ", interrupt.tickCount
-        # interrupt.currentEvent = interrupt.Interrupt.ULTRASONIC_NOTIFICATION
-        # thread.interrupt_main()
-
-        # if number == 200 or number == 600 or number == 520:
-        #     msgSuspicious = True
-        #     print "Suspicious image received.Sending image and current location to Coordinator"
-        #     # --------------- send current location + image in here
-        #     thread.start_new_thread(goToStart, (currentLocation, initialLocationPoint))
-        #     time.sleep(2)  # ----------------------------check here
-        #     interrupt.currentEvent = interrupt.Interrupt.VIDEO_PROCESSOR_NOTIFICATION
-        #     thread.interrupt_main()
-        #     break
-        # else:
-        #     msgSuspicious = False
-
         if number == 200 or number == 600 or number == 520:
             msgSuspicious = True
             print "Suspicious image received.Sending image and current location to Coordinator"
@@ -317,16 +298,16 @@ def key_input(path, f_degree, b_degree, r_degree, l_degree, initialLocation, cur
 
         if key_press == '^':
             print "Current ^ direction"
-            directionCorrection(f_degree)
+            directionCorrection(CompassBearing.F_DEGREE)
         elif key_press == 'v':
             print "Current v direction"
-            directionCorrection(b_degree)
+            directionCorrection(CompassBearing.B_DEGREE)
         elif key_press == '<':
             print "Current < direction"
-            directionCorrection(l_degree)
+            directionCorrection(CompassBearing.L_DEGREE)
         elif key_press == '>':
             print "Current > direction"
-            directionCorrection(r_degree)
+            directionCorrection(CompassBearing.R_DEGREE)
         key_press_index += 1
 
 
@@ -344,10 +325,10 @@ path = ['^', '^']
 # ~ l_degree=270 #<
 
 ##floor 2 small
-f_degree = 268  # ^
-b_degree = 58  # V
-r_degree = 356  # >
-l_degree = 130  # <
+# f_degree = 268  # ^
+# b_degree = 58  # V
+# r_degree = 356  # >
+# l_degree = 130  # <
 
 # key_input(path, f_degree, b_degree, r_degree, l_degree, 0, 0, 0, 0)
 

@@ -25,10 +25,12 @@ PERSON_DETAILS = []
 
 incomeMsg = ""
 assignedArea = []
-F_DEGREE = 3
-B_DEGREE = 3
-R_DEGREE = 3
-L_DEGREE = 3
+
+class CompassBearing:
+    F_DEGREE = 3
+    B_DEGREE = 3
+    R_DEGREE = 3
+    L_DEGREE = 3
 
 class Priority:
     LOW = 0
@@ -230,7 +232,7 @@ def agentMainProcess(currentEvent, group):
                 print assignedArea
 
                 from KeyPointCoverage import mainKeyPointCoverage as mainKeyPointCoverage
-                mainKeyPointCoverage(AREA_MAP, F_DEGREE, B_DEGREE, R_DEGREE, L_DEGREE, assignedArea, INTITAL_PLACE)
+                mainKeyPointCoverage(AREA_MAP,assignedArea, INTITAL_PLACE)
 
             ############################## initializing completed ##################################################################
             elif (int(tag) == int(Message.PERSONS_DETAILS)):
@@ -242,7 +244,7 @@ def agentMainProcess(currentEvent, group):
                 # print assignedArea
                 #
                 # from KeyPointCoverage import mainKeyPointCoverage as mainKeyPointCoverage
-                # mainKeyPointCoverage(AREA_MAP, F_DEGREE, B_DEGREE, R_DEGREE, L_DEGREE, assignedArea, INTITAL_PLACE)
+                # mainKeyPointCoverage(AREA_MAP,assignedArea, INTITAL_PLACE)
 
             elif (int(tag) == int(Message.PERSON_DETECTED)):
                 print "Person detected"
@@ -266,7 +268,7 @@ def agentMainProcess(currentEvent, group):
             updatedAssignedArea.insert(0,currentLocation)
             print "remainKeypoints: ",updatedAssignedArea
             if (len(updatedAssignedArea)>2):
-                mainKeyPointCoverage(AREA_MAP, F_DEGREE, B_DEGREE, R_DEGREE, L_DEGREE, updatedAssignedArea, INTITAL_PLACE)
+                mainKeyPointCoverage(AREA_MAP, updatedAssignedArea, INTITAL_PLACE)
             elif (len(updatedAssignedArea)==2):
                 from CompassControl import goToStart as goToStart
                 goToStart(currentLocation, INTITAL_PLACE)
