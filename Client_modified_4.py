@@ -277,6 +277,7 @@ def agentMainProcess(currentEvent, group):
             from CompassControl import goToStart as goToStart
             from CompassControl import currentLocation
             goToStart(currentLocation, INTITAL_PLACE)
+            print "Key Point Coverage Completion"
 
         elif (currentEvent == interrupt.Interrupt.COMPLETION_NOTIFICATION):
             print "Key Point Coverage Completion"

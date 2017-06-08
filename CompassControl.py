@@ -34,6 +34,7 @@ CRITICAL_ULTRASONIC = 50
 tickCount = 0
 currentLocation = []
 updatedAssignedArea = []
+personDetected = 0
 # class Compass:
 #   bus = smbus.SMBus(1)
 #   address = 0x1e
@@ -236,7 +237,10 @@ def personDetectedNotify(PERSON_DETECTED):
     stopNotify()
 
 def stopNotify():
-    interrupt.currentEvent = interrupt.Interrupt.VIDEO_PROCESSOR_NOTIFICATION
+    print "Stop Notification checking: ", personDetected
+    if personDetected == 9:
+        interrupt.currentEvent = interrupt.Interrupt.GOTO_START
+        thread.interrupt_main()
 
 
 # ~ def key_input(path,f_degree,b_degree,r_degree,l_degree, pathcounter):
