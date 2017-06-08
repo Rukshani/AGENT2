@@ -9,6 +9,7 @@ import sys
 from time import sleep
 from time import gmtime, strftime
 import datetime
+import interrupt
 
 CRITICAL_BATTERY_LEVEL = 3.6
 BROADCAST_NETWORK = '192.168.8.255'
@@ -21,26 +22,18 @@ AREA_MAP = []
 INTITAL_PLACE = []
 PERSON_DETAILS = []
 
-currentEvent = ""
+
 incomeMsg = ""
 assignedArea = []
-
+F_DEGREE = 3
+B_DEGREE = 3
+R_DEGREE = 3
+L_DEGREE = 3
 
 class Priority:
     LOW = 0
     NORMAL = 1
     HIGH = 2
-
-
-##-------------------- List of Intrrupts ---------------------------##
-
-class Interrupt:
-    NO_EVENT = 0
-    INCOMING_MESSAGE = 1
-    CRITICAL_BATTERY_LEVEL_REACHED = 2
-    REGISTER_TO_SERVICE = 3
-    VIDEO_PROCESSOR_NOTIFICATION = 4
-
 
 ##-------------------- List of Intrrupts ---------------------------##
 class Message:
@@ -144,8 +137,7 @@ class DummyClient(WebSocketClient):
     def received_message(self, m):
         global incomeMsg
         incomeMsg = str(m)
-        global currentEvent
-        currentEvent = Interrupt.INCOMING_MESSAGE
+        interrupt.currentEvent = interrupt.Interrupt.INCOMING_MESSAGE
         thread.interrupt_main()
 
 
@@ -170,14 +162,16 @@ def drawObstacles(rectangle):
 
 ##-------------------- Agent Main Process ------------------------------------------##   
 def agentMainProcess(currentEvent, group):
-    if (currentEvent != Interrupt.NO_EVENT):
+    if (currentEvent != interrupt.Interrupt.NO_EVENT):
         a = datetime.datetime.now()
-        if (currentEvent == Interrupt.REGISTER_TO_SERVICE):
+        if (currentEvent == interrupt.Interrupt.REGISTER_TO_SERVICE):
             ws = group.get(COORDINATOR, None);
+            print AGENT_IP
+            print COORDINATOR
             msg = formatTheMessageAndSend(Message.READY_TO_WORK, Message.READY_TO_WORK, AGENT_IP, COORDINATOR,
                                           Priority.NORMAL);
             ws.send(msg)
-        elif (currentEvent == Interrupt.INCOMING_MESSAGE):
+        elif (currentEvent == interrupt.Interrupt.INCOMING_MESSAGE):
 
             j = json.loads(incomeMsg)
             tag = j['Header'][0]['Tag'][0]
@@ -230,14 +224,10 @@ def agentMainProcess(currentEvent, group):
             elif (int(tag) == int(Message.ASSIGNED_AREA)):
                 global assignedArea
                 # assignedArea = j['Body'][0]['Message'][0]
-                assignedArea = [[0,5], [0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]]
+                #---------------------for testinnnnnnnnnnnnnnnnnnnnnnnnnnnng
+                assignedArea = [INTITAL_PLACE, [0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]]
                 print "Area assigned"
                 print assignedArea
-
-                F_DEGREE = 1
-                B_DEGREE = 2
-                R_DEGREE = 3
-                L_DEGREE = 4
 
                 from KeyPointCoverage import mainKeyPointCoverage as mainKeyPointCoverage
                 mainKeyPointCoverage(AREA_MAP, F_DEGREE, B_DEGREE, R_DEGREE, L_DEGREE, assignedArea, INTITAL_PLACE)
@@ -247,10 +237,49 @@ def agentMainProcess(currentEvent, group):
                 global PERSON_DETAILS
                 PERSON_DETAILS = j['Body'][0]['Message'][0]
                 print "client request recieved"
+                # assignedArea = [INTITAL_PLACE, [0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]]
+                # print "Area assigned"
+                # print assignedArea
+                #
+                # from KeyPointCoverage import mainKeyPointCoverage as mainKeyPointCoverage
+                # mainKeyPointCoverage(AREA_MAP, F_DEGREE, B_DEGREE, R_DEGREE, L_DEGREE, assignedArea, INTITAL_PLACE)
 
             elif (int(tag) == int(Message.PERSON_DETECTED)):
-            # elif (int(tag) == 9):
                 print "Person detected"
+                from CompassControl import personDetectedNotify
+                personDetectedNotify(Message.PERSON_DETECTED)
+
+        elif (currentEvent == interrupt.Interrupt.VIDEO_PROCESSOR_NOTIFICATION):
+            print "VIDEO_PROCESSOR_NOTIFICATION"
+            from CompassControl import currentLocation
+            currentLocationofAgent = currentLocation
+
+        elif (currentEvent == interrupt.Interrupt.ULTRASONIC_NOTIFICATION):
+            print "ULTRASONIC_NOTIFICATIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN"
+            from CompassControl import ultrasonicDistance
+            ultrasonicDistance()
+            from KeyPointCoverage import mainKeyPointCoverage as mainKeyPointCoverage
+            # assignedArea = [[3,11],[5,10],[5,8],[5,5],[3,5]]
+            from CompassControl import updatedAssignedArea
+            from CompassControl import currentLocation
+            print "currentLocation from client_modified: ",currentLocation
+            updatedAssignedArea.insert(0,currentLocation)
+            print "remainKeypoints: ",updatedAssignedArea
+            if (len(updatedAssignedArea)>2):
+                mainKeyPointCoverage(AREA_MAP, F_DEGREE, B_DEGREE, R_DEGREE, L_DEGREE, updatedAssignedArea, INTITAL_PLACE)
+            elif (len(updatedAssignedArea)==2):
+                from CompassControl import goToStart as goToStart
+                goToStart(currentLocation, INTITAL_PLACE)
+            else:
+                print "Completion"
+
+        elif (currentEvent == interrupt.Interrupt.GOTO_START):
+            from CompassControl import goToStart as goToStart
+            from CompassControl import currentLocation
+            goToStart(currentLocation, INTITAL_PLACE)
+
+        elif (currentEvent == interrupt.Interrupt.COMPLETION_NOTIFICATION):
+            print "Key Point Coverage Completion"
 
 
 
@@ -282,8 +311,8 @@ def formatTheMessageAndSend(msg, tag, sender, receiver, priority):
 
 def main():
     try:
-        global currentEvent
-        currentEvent = Interrupt.NO_EVENT
+        
+        interrupt.currentEvent = interrupt.Interrupt.NO_EVENT
         CommunicatorGroup = {}
 
         ######### Start Battery Monitoring Thread #####
@@ -303,13 +332,13 @@ def main():
         ws.connect()
 
         CommunicatorGroup[COORDINATOR] = ws
-        currentEvent = Interrupt.REGISTER_TO_SERVICE
+        interrupt.currentEvent = interrupt.Interrupt.REGISTER_TO_SERVICE
 
         ######### Start the main process of Agent #######
         while True:
             try:
-                agentMainProcess(currentEvent, CommunicatorGroup);
-                currentEvent = Interrupt.NO_EVENT
+                agentMainProcess(interrupt.currentEvent, CommunicatorGroup);
+                interrupt.currentEvent = interrupt.Interrupt.NO_EVENT
                 ws.run_forever()
             except KeyboardInterrupt:
                 print('interrupted')

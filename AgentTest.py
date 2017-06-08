@@ -173,10 +173,10 @@ def main():
         ######### Start Battery Monitoring Thread #####
         thread.start_new_thread(monitorBatteries, ())
 
-        F_DEGREE = 1
-        B_DEGREE = 2
+        F_DEGREE = 3
+        B_DEGREE = 3
         R_DEGREE = 3
-        L_DEGREE = 4
+        L_DEGREE = 3
         # assignedArea=[[],[],[],[],[],[],[],[],]
         # assignedArea=[[0, 0], [1, 7], [2, 12], [4, 14], [5, 1], [9, 0], [9, 8]]
         assignedArea = [INTITAL_PLACE, [0, 5], [0, 7], [0, 12], [2, 12], [4, 14], [8,14], [9,12]]
