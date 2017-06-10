@@ -1,6 +1,8 @@
 
 ##-------------------- List of Intrrupts ---------------------------##
 
+from CompassControl import currentLocation
+
 class Interrupt:
     NO_EVENT = 0
     INCOMING_MESSAGE = 1
@@ -12,3 +14,4 @@ class Interrupt:
     COMPLETION_NOTIFICATION = 7
 
 currentEvent = ""
+currentPlace = currentLocation

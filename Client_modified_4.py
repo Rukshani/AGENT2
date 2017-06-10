@@ -1,5 +1,5 @@
 import thread
-##from serial import Serial
+from serial import Serial
 from ws4py.client.threadedclient import WebSocketClient
 import time
 import re
@@ -22,15 +22,21 @@ AREA_MAP = []
 INTITAL_PLACE = []
 PERSON_DETAILS = []
 
-
 incomeMsg = ""
 assignedArea = []
+socket
 
+
+#~ F_DEGREE = 14 37
+    #~ B_DEGREE = 256 261
+    #~ R_DEGREE = 98 124
+    #~ L_DEGREE = 320 329
 class CompassBearing:
-    F_DEGREE = 3
-    B_DEGREE = 3
-    R_DEGREE = 3
-    L_DEGREE = 3
+    F_DEGREE = 37
+    B_DEGREE = 261
+    R_DEGREE = 124
+    L_DEGREE = 329
+
 
 class Priority:
     LOW = 0
@@ -50,43 +56,46 @@ class Message:
     CRITICAL_BATTERY_LEVEL = 8
     PERSON_DETECTED = 9
     CURRENT_LOCATION = 10
-
+    AGENT_COMMUNICATION_STOPPED = 11
+    BATTERY_STATUS  = 12;
+    LOCATION_STATUS = 13;
 
 ##-------------------- Battery Monitoring Service ---------------------------##
 
+def monitorBatteries(ws):
+	serialPort = Serial("/dev/ttyAMA0", 9600, timeout=2)		
+	if (serialPort.isOpen() == False):
+		
+		serialPort.open()
+    
+        outStr = ''
+        inStr = ''
+    
+        serialPort.flushInput()
+        serialPort.flushOutput()
 
+	while True:
+		response = serialPort.readline()
+	
+		status = False
 
-def monitorBatteries():
-    ##    serialPort = Serial("/dev/ttyAMA0", 9600, timeout=2)
-    ##    if (serialPort.isOpen() == False):
-    ##        serialPort.open()
-    ##
-    ##    outStr = ''
-    ##    inStr = ''
-    ##
-    ##    serialPort.flushInput()
-    ##    serialPort.flushOutput()
+		msg = formatTheMessageAndSend(response, Message. BATTERY_STATUS, AGENT_IP, COORDINATOR,
+										  Priority.NORMAL);
+		ws.send(msg)
+		values = response.split("-----")
+		for value in values:
+			value = float(re.findall("\d+\.\d+", value)[0])
+			if value < float(CRITICAL_BATTERY_LEVEL):
+				status = True
+			else:
+				status = False
+		if status == True:
+			thread.interrupt_main()
+			print "Critical Battery Level"
+			break
+    
 
-    while True:
-        ##        response = serialPort.readline()
-        response = "3.81-----3.61"
-        status = False
-        ##        print response
-
-        values = response.split("-----")
-        for value in values:
-            value = float(re.findall("\d+\.\d+", value)[0])
-            if value < float(CRITICAL_BATTERY_LEVEL):
-                status = True
-            else:
-                status = False
-        if status == True:
-            thread.interrupt_main()
-            print "Critical Battery Level"
-            break
-
-
-# serialPort.close()
+	serialPort.close()
 
 ##-------------------- End of Battery Monitoring Service---------------------------##
 
@@ -96,6 +105,7 @@ def registerToService():
     addr = (BROADCAST_NETWORK, 33333)  # broadcast address explicitly
 
     UDPSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Create socket
+    UDPSock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     print "Starting the registering process"
 
@@ -106,14 +116,19 @@ def registerToService():
             print "Sending message '%s'..." % data1
             try:
                 UDPSock.settimeout(5)
+                
                 data, addr = UDPSock.recvfrom(1024)
                 UDPSock.close()
                 print "Server IP is %s" % (data)
                 data1 = []
                 data1.append(data)
-                data1.append(addr[0])
-                UDPSock.close()
 
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect((data, 80))
+                s.getsockname()[0]
+                
+                data1.append(s.getsockname()[0])
+                UDPSock.close()
                 break
             except:
                 print "Time out exception"
@@ -168,8 +183,6 @@ def agentMainProcess(currentEvent, group):
         a = datetime.datetime.now()
         if (currentEvent == interrupt.Interrupt.REGISTER_TO_SERVICE):
             ws = group.get(COORDINATOR, None);
-            print AGENT_IP
-            print COORDINATOR
             msg = formatTheMessageAndSend(Message.READY_TO_WORK, Message.READY_TO_WORK, AGENT_IP, COORDINATOR,
                                           Priority.NORMAL);
             ws.send(msg)
@@ -193,8 +206,9 @@ def agentMainProcess(currentEvent, group):
                 # map = '{"height":6,"width":12,"data1":[[1,2,2,2],[4,4,0,1],[2,6,4,1]],"data2":[[0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]],"data3":[0,5]}'
                 map = '{"height":6,"width":12,"data1":[[2,1,2,2],[4,4,0,1],[6,2,4,2]],' \
                       '"data2":[[0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]],"data3":[0,5]}'
+                      
+                
                 j = json.loads(map)
-
                 global AREA_MAP
                 height = int(j['height'])
                 width = int(j['width'])
@@ -227,7 +241,8 @@ def agentMainProcess(currentEvent, group):
                 global assignedArea
                 # assignedArea = j['Body'][0]['Message'][0]
                 #---------------------for testinnnnnnnnnnnnnnnnnnnnnnnnnnnng
-                assignedArea = [INTITAL_PLACE, [0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]]
+                #~ [3,11],[5,10],[5,8],[5,5],[3,5]]
+                assignedArea = [INTITAL_PLACE,[0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]]
                 print "Area assigned"
                 print assignedArea
 
@@ -238,6 +253,10 @@ def agentMainProcess(currentEvent, group):
             elif (int(tag) == int(Message.PERSONS_DETAILS)):
                 global PERSON_DETAILS
                 PERSON_DETAILS = j['Body'][0]['Message'][0]
+                print PERSON_DETAILS
+##                global socket
+##                socket = getSocket()
+##                sendMsgToVideoProcessor("upper:#342342,lower:#345678")
                 print "client request recieved"
                 # assignedArea = [INTITAL_PLACE, [0,7],[0,10],[3,11],[5,10],[5,8],[5,5],[3,5]]
                 # print "Area assigned"
@@ -247,6 +266,7 @@ def agentMainProcess(currentEvent, group):
                 # mainKeyPointCoverage(AREA_MAP,assignedArea, INTITAL_PLACE)
 
             elif (int(tag) == int(Message.PERSON_DETECTED)):
+##                sendMsgToVideoProcessor("stop")
                 print "Person detected"
                 from CompassControl import personDetectedNotify
                 personDetectedNotify(Message.PERSON_DETECTED)
@@ -259,7 +279,10 @@ def agentMainProcess(currentEvent, group):
         elif (currentEvent == interrupt.Interrupt.ULTRASONIC_NOTIFICATION):
             print "ULTRASONIC_NOTIFICATIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN"
             from CompassControl import ultrasonicDistance
-            ultrasonicDistance()
+            from CompassControl import remainingTicks
+            if remainingTicks >20 :
+                ultrasonicDistance(remainingTicks)
+
             from KeyPointCoverage import mainKeyPointCoverage as mainKeyPointCoverage
             # assignedArea = [[3,11],[5,10],[5,8],[5,5],[3,5]]
             from CompassControl import updatedAssignedArea
@@ -284,6 +307,37 @@ def agentMainProcess(currentEvent, group):
         elif (currentEvent == interrupt.Interrupt.COMPLETION_NOTIFICATION):
             print "Key Point Coverage Completion"
 
+
+                
+
+def getSocket():
+    HOST = 'localhost'   # The remote host
+    PORT = 50001              # The same port as used by the server
+    s = None
+    for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
+        af, socktype, proto, canonname, sa = res
+        try:
+            s = socket.socket(af, socktype, proto)
+        except socket.error as msg:
+            s = None
+            continue
+        try:
+            s.connect(sa)
+        except socket.error as msg:
+            s.close()
+            s = None
+            continue
+        if socket is None:
+            print 'could not open socket'
+            sys.exit(1)
+        else:
+            return s
+
+
+def sendMsgToVideoProcessor(msg): 
+    socket.sendall(msg)
+    data = socket.recv(1024)
+    print 'Received', repr(data)
 
 
 
@@ -316,10 +370,7 @@ def main():
     try:
         
         interrupt.currentEvent = interrupt.Interrupt.NO_EVENT
-        CommunicatorGroup = {}
-
-        ######### Start Battery Monitoring Thread #####
-        thread.start_new_thread(monitorBatteries, ())
+        CommunicatorGroup = {}        
 
         ######### Register to the Service #############
         serverIp = registerToService()
@@ -333,6 +384,9 @@ def main():
 
         ws = DummyClient(newEndPoint)
         ws.connect()
+        
+        ######### Start Battery Monitoring Thread #####
+        thread.start_new_thread(monitorBatteries, (ws,))
 
         CommunicatorGroup[COORDINATOR] = ws
         interrupt.currentEvent = interrupt.Interrupt.REGISTER_TO_SERVICE
